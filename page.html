@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clientes API</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      input,
+      button {
+        margin: 5px;
+        padding: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      td pre {
+        max-height: 100px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+
+      th {
+        background-color: #f4f4f4;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Gerenciamento de Clientes</h2>
+
+    <h3>Criar Cliente</h3>
+    <input type="text" id="nome" placeholder="Nome" />
+    <input type="email" id="email" placeholder="Email" />
+    <input type="text" id="telefone" placeholder="Telefone" />
+    <input type="date" id="birthday" placeholder="Data de Nascimento" />
+    <input type="text" id="address" placeholder="Endereço" />
+    <button onclick="criarCliente()">Criar</button>
+    <button onclick="limparCamposCriacao()">Limpar</button>
+
+    <h3>Buscar Cliente por ID</h3>
+    <input type="text" id="clienteId" placeholder="ID do Cliente" />
+    <button onclick="buscarCliente()">Buscar</button>
+    <button onclick="limparCamposBusca()">Limpar</button>
+
+    <h3>Lista de Clientes</h3>
+    <button onclick="listarClientes()">Atualizar Lista</button>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Telefone</th>
+          <th>Data de Nascimento</th>
+          <th>Endereço</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="clientesLista"></tbody>
+    </table>
+
+    <h3>Histórico de Requisições</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>URL</th>
+          <th>Método</th>
+          <th>Status</th>
+          <th>Resposta</th>
+        </tr>
+      </thead>
+      <tbody id="historicoFetch"></tbody>
+    </table>
+
+    <script>
+      const API_URL = 'http://localhost:3000/api/clients'
+      const historicoFetch = []
+
+      function limparCamposCriacao() {
+        document.getElementById('nome').value = ''
+        document.getElementById('email').value = ''
+        document.getElementById('telefone').value = ''
+        document.getElementById('birthday').value = ''
+        document.getElementById('address').value = ''
+      }
+
+      function limparCamposBusca() {
+        document.getElementById('clienteId').value = ''
+      }
+
+      async function registrarFetch(url, metodo, callback) {
+        const inicio = performance.now()
+        let status = 'Erro'
+        let respostaTexto = '-'
+        try {
+          const resposta = await callback()
+          status = resposta.status
+          respostaTexto = await resposta.text()
+          return new Response(respostaTexto, { status: resposta.status })
+        } catch (error) {
+          console.error('Erro na requisição:', error)
+        } finally {
+          historicoFetch.push({ url, metodo, status, respostaTexto })
+          atualizarHistorico()
+        }
+      }
+
+      function atualizarHistorico() {
+        const tabela = document.getElementById('historicoFetch')
+        tabela.innerHTML = ''
+        historicoFetch.forEach(({ url, metodo, status, respostaTexto }) => {
+          const row = document.createElement('tr')
+          row.innerHTML = `
+      <td>${url}</td>
+      <td>${metodo}</td>
+      <td>${status}</td>
+      <td><pre>${respostaTexto}</pre></td>
+    `
+          tabela.appendChild(row)
+        })
+      }
+
+      async function criarCliente() {
+        const nome = document.getElementById('nome').value
+        const email = document.getElementById('email').value
+        const telefone = document.getElementById('telefone').value
+        const birthday = document.getElementById('birthday').value
+        const address = document.getElementById('address').value
+
+        await registrarFetch(API_URL, 'POST', () =>
+          fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(
+              {
+                name: nome,
+                email,
+                phone: telefone,
+                birthday,
+                address,
+              },
+              null,
+              2
+            ),
+          })
+        )
+        listarClientes()
+      }
+
+      async function buscarCliente() {
+        const id = document.getElementById('clienteId').value
+        if (!id.trim()) return alert('Campo ID Vazio')
+
+        const res = await registrarFetch(`${API_URL}/${id}`, 'GET', () =>
+          fetch(`${API_URL}/${id}`)
+        )
+        if (res?.status === 404) return alert('Cliente não encontrado!')
+
+        const cliente = await res.json()
+        alert(`Nome: ${cliente.name}, Email: ${cliente.email}`)
+      }
+
+      async function listarClientes() {
+        const res = await registrarFetch(API_URL, 'GET', () => fetch(API_URL))
+        const clientes = await res.json()
+        const lista = document.getElementById('clientesLista')
+        lista.innerHTML = ''
+        clientes.forEach((cliente) => {
+          const row = document.createElement('tr')
+          row.innerHTML = `
+            <td>${cliente.id}</td>
+            <td>${cliente.name}</td>
+            <td>${cliente.email}</td>
+            <td>${cliente.phone || '-'}</td>
+            <td>${cliente.birthday || '-'}</td>
+            <td>${cliente.address || '-'}</td>
+            <td>
+              <button onclick="editarCliente('${cliente.id}')">Editar</button>
+              <button onclick="deletarCliente('${cliente.id}')">Excluir</button>
+            </td>
+          `
+          lista.appendChild(row)
+        })
+      }
+
+      async function editarCliente(id) {
+        const res = await registrarFetch(`${API_URL}/${id}`, 'GET', () =>
+          fetch(`${API_URL}/${id}`)
+        )
+        if (res.status === 404) {
+          alert('Cliente não encontrado!')
+          return
+        }
+
+        const cliente = await res.json()
+
+        const novoNome = prompt('Novo nome:', cliente.name)
+        const novoEmail = prompt('Novo email:', cliente.email)
+        const novoTelefone = prompt('Novo telefone:', cliente.phone || '')
+        const novaDataNascimento = prompt(
+          'Nova data de nascimento (YYYY-MM-DD):',
+          cliente.birthday || ''
+        )
+        const novoEndereco = prompt('Novo endereço:', cliente.address || '')
+
+        if (!novoNome || !novoEmail) {
+          alert('Nome e email são obrigatórios!')
+          return
+        }
+
+        await registrarFetch(`${API_URL}/${id}`, 'PUT', () =>
+          fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(
+              {
+                name: novoNome,
+                email: novoEmail,
+                phone: novoTelefone || null,
+                birthday: novaDataNascimento || null,
+                address: novoEndereco || null,
+              },
+              null,
+              2
+            ),
+          })
+        )
+
+        listarClientes()
+      }
+
+      async function deletarCliente(id) {
+        if (!confirm('Tem certeza que deseja excluir este cliente?')) return
+
+        await registrarFetch(`${API_URL}/${id}`, 'DELETE', () =>
+          fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+        )
+
+        listarClientes()
+      }
+    </script>
+  </body>
+</html>
