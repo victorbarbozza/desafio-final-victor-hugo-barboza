@@ -1,0 +1,21 @@
+{
+  "name": "desafio-final",
+  "version": "1.0.0",
+  "description": "Desafio Final do Modulo 4 de Victor Hugo Barboza - Pós Xp Educação",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Victor Hugo Barboza",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "npm": "^11.1.0",
+    "reflect-metadata": "^0.2.2",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0"
+  }
+}
