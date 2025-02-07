@@ -30,14 +30,31 @@
         overflow-y: auto;
         white-space: pre-wrap;
       }
-
       th {
         background-color: #f4f4f4;
+      }
+      .stats {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+      }
+      .estatisticas {
+        margin-left: 10px;
+        margin-right: 10px;
       }
     </style>
   </head>
   <body>
-    <h2>Gerenciamento de Clientes</h2>
+    <h1>Gerenciamento de Clientes</h1>
+
+    <div class="stats">
+      <h3>Estatísticas:</h3>
+      <div class="estatisticas" id="endpointStats"></div>
+      <button onclick="atualizarEstatisticas()">Atualizar Estatísticas</button>
+    </div>
 
     <h3>Criar Cliente</h3>
     <input type="text" id="nome" placeholder="Nome" />
@@ -48,9 +65,11 @@
     <button onclick="criarCliente()">Criar</button>
     <button onclick="limparCamposCriacao()">Limpar</button>
 
-    <h3>Buscar Cliente por ID</h3>
+    <h3>Buscar Cliente</h3>
     <input type="text" id="clienteId" placeholder="ID do Cliente" />
-    <button onclick="buscarCliente()">Buscar</button>
+    <button onclick="buscarCliente()">Buscar por ID</button>
+    <input type="text" id="clienteNome" placeholder="Nome do Cliente" />
+    <button onclick="buscarClientePorNome()">Buscar por Nome</button>
     <button onclick="limparCamposBusca()">Limpar</button>
 
     <h3>Lista de Clientes</h3>
@@ -64,6 +83,8 @@
           <th>Telefone</th>
           <th>Data de Nascimento</th>
           <th>Endereço</th>
+          <th>Criado Em</th>
+          <th>Atualizado Em</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -71,9 +92,11 @@
     </table>
 
     <h3>Histórico de Requisições</h3>
+    <button onclick="limparHistoricoFetch()">Limpar Histórico</button>
     <table>
       <thead>
         <tr>
+          <th>#</th>
           <th>URL</th>
           <th>Método</th>
           <th>Status</th>
@@ -84,10 +107,10 @@
     </table>
 
     <script>
-      const API_URL = 'http://localhost:3000/api/clients'
+      const API_URL = '/api/clients'
       const historicoFetch = []
 
-      function limparCamposCriacao() {
+      const limparCamposCriacao = () => {
         document.getElementById('nome').value = ''
         document.getElementById('email').value = ''
         document.getElementById('telefone').value = ''
@@ -95,11 +118,12 @@
         document.getElementById('address').value = ''
       }
 
-      function limparCamposBusca() {
+      const limparCamposBusca = () => {
         document.getElementById('clienteId').value = ''
+        document.getElementById('clienteNome').value = ''
       }
 
-      async function registrarFetch(url, metodo, callback) {
+      const registrarFetch = async (url, metodo, callback) => {
         const inicio = performance.now()
         let status = 'Erro'
         let respostaTexto = '-'
@@ -111,34 +135,51 @@
         } catch (error) {
           console.error('Erro na requisição:', error)
         } finally {
-          historicoFetch.push({ url, metodo, status, respostaTexto })
+          historicoFetch.unshift({ url, metodo, status, respostaTexto })
           atualizarHistorico()
         }
       }
 
-      function atualizarHistorico() {
+      const atualizarHistorico = () => {
         const tabela = document.getElementById('historicoFetch')
         tabela.innerHTML = ''
-        historicoFetch.forEach(({ url, metodo, status, respostaTexto }) => {
+        historicoFetch.forEach((item, index) => {
           const row = document.createElement('tr')
           row.innerHTML = `
-      <td>${url}</td>
-      <td>${metodo}</td>
-      <td>${status}</td>
-      <td><pre>${respostaTexto}</pre></td>
+      <td>${index + 1}</td>
+      <td>${item.url}</td>
+      <td>${item.metodo}</td>
+      <td>${item.status}</td>
+      <td><pre>${item.respostaTexto}</pre></td>
     `
           tabela.appendChild(row)
         })
       }
 
-      async function criarCliente() {
+      const limparHistoricoFetch = () => {
+        historicoFetch.length = 0
+
+        const tabela = document.getElementById('historicoFetch')
+        tabela.innerHTML = ''
+      }
+
+      const atualizarEstatisticas = async () => {
+        const res = await registrarFetch(`${API_URL}/count`, 'GET', () =>
+          fetch(`${API_URL}/count`)
+        )
+        const stats = await res.json()
+        const statsDiv = document.getElementById('endpointStats')
+        statsDiv.innerHTML = `<p>${stats.count} clientes</p>`
+      }
+
+      const criarCliente = async () => {
         const nome = document.getElementById('nome').value
         const email = document.getElementById('email').value
         const telefone = document.getElementById('telefone').value
         const birthday = document.getElementById('birthday').value
         const address = document.getElementById('address').value
 
-        await registrarFetch(API_URL, 'POST', () =>
+        const res = await registrarFetch(API_URL, 'POST', () =>
           fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -155,10 +196,16 @@
             ),
           })
         )
-        listarClientes()
+
+        if (res.status === 400) {
+          const { message } = await res.json()
+          alert(`Mensagem: ${message}`)
+        } else {
+          listarClientes()
+        }
       }
 
-      async function buscarCliente() {
+      const buscarCliente = async () => {
         const id = document.getElementById('clienteId').value
         if (!id.trim()) return alert('Campo ID Vazio')
 
@@ -168,33 +215,55 @@
         if (res?.status === 404) return alert('Cliente não encontrado!')
 
         const cliente = await res.json()
-        alert(`Nome: ${cliente.name}, Email: ${cliente.email}`)
+        atualizarTabelaClientes([cliente])
       }
 
-      async function listarClientes() {
+      const buscarClientePorNome = async () => {
+        const nome = document.getElementById('clienteNome').value
+        if (!nome.trim()) return alert('Campo Nome Vazio')
+
+        const res = await registrarFetch(`${API_URL}/name/${nome}`, 'GET', () =>
+          fetch(`${API_URL}/name/${nome}`)
+        )
+
+        if (res?.status === 404) return alert('Cliente não encontrado!')
+
+        const clientes = await res.json()
+        atualizarTabelaClientes(clientes)
+      }
+
+      const listarClientes = async () => {
         const res = await registrarFetch(API_URL, 'GET', () => fetch(API_URL))
         const clientes = await res.json()
+        atualizarTabelaClientes(clientes)
+      }
+
+      const atualizarTabelaClientes = (clientes) => {
         const lista = document.getElementById('clientesLista')
         lista.innerHTML = ''
         clientes.forEach((cliente) => {
           const row = document.createElement('tr')
+          row.setAttribute('data-id', cliente.id)
           row.innerHTML = `
-            <td>${cliente.id}</td>
-            <td>${cliente.name}</td>
-            <td>${cliente.email}</td>
-            <td>${cliente.phone || '-'}</td>
-            <td>${cliente.birthday || '-'}</td>
-            <td>${cliente.address || '-'}</td>
-            <td>
-              <button onclick="editarCliente('${cliente.id}')">Editar</button>
-              <button onclick="deletarCliente('${cliente.id}')">Excluir</button>
-            </td>
-          `
+      <td>${cliente.id}</td>
+      <td>${cliente.name}</td>
+      <td>${cliente.email}</td>
+      <td>${cliente.phone || '-'}</td>
+      <td>${cliente.birthday || '-'}</td>
+      <td>${cliente.address || '-'}</td>
+      <td>${new Date(cliente.createdAt).toLocaleString()}</td>
+      <td>${new Date(cliente.updatedAt).toLocaleString()}</td>
+      <td>
+        <button onclick="editarCliente('${cliente.id}')">Editar</button>
+        <button onclick="deletarCliente('${cliente.id}')">Excluir</button>
+      </td>
+    `
+
           lista.appendChild(row)
         })
       }
 
-      async function editarCliente(id) {
+      const editarCliente = async (id) => {
         const res = await registrarFetch(`${API_URL}/${id}`, 'GET', () =>
           fetch(`${API_URL}/${id}`)
         )
@@ -240,15 +309,25 @@
         listarClientes()
       }
 
-      async function deletarCliente(id) {
+      const removerLinhaDaTabela = (id) => {
+        const linha = document.querySelector(`tr[data-id="${id}"]`)
+        if (linha) {
+          linha.remove()
+        }
+      }
+
+      const deletarCliente = async (id) => {
         if (!confirm('Tem certeza que deseja excluir este cliente?')) return
 
         await registrarFetch(`${API_URL}/${id}`, 'DELETE', () =>
           fetch(`${API_URL}/${id}`, { method: 'DELETE' })
         )
 
-        listarClientes()
+        removerLinhaDaTabela(id)
       }
+
+      listarClientes()
+      atualizarEstatisticas()
     </script>
   </body>
 </html>
