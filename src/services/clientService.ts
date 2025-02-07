@@ -34,9 +34,7 @@ export class ClientService {
 
     if (!client) return null
 
-    return await clientRepository.save(
-      clientRepository.merge(client, clientData)
-    )
+    return await clientRepository.save({ id, ...clientData })
   }
 
   async delete(id: string): Promise<Boolean> {
