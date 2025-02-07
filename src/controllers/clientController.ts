@@ -18,9 +18,9 @@ export class ClientController {
         })
       }
       const newClient = await this.clientService.create(clientData)
-      return res.status(201).json(newClient)
+      return res.status(200).json(newClient)
     } catch (e) {
-      return res.status(400).json({
+      return res.status(500).json({
         message: 'Erro ao criar o cliente',
         error: e,
       })
@@ -30,7 +30,7 @@ export class ClientController {
   async count(req: Request, res: Response): Promise<Response> {
     try {
       const count = await this.clientService.count()
-      return res.status(200).json(count)
+      return res.status(200).json({ count })
     } catch (e) {
       return res.status(500).json({
         message: 'Erro ao contar os Clientes',
@@ -96,7 +96,7 @@ export class ClientController {
 
       return res.status(200).json(updatedClient)
     } catch (e) {
-      return res.status(400).json({
+      return res.status(500).json({
         message: 'Erro ao atualizar o cliente',
       })
     }
