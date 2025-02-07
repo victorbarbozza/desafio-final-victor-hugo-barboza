@@ -22,8 +22,8 @@ export class Client implements IClient {
   @Column({ type: 'text', nullable: true })
   phone?: string
 
-  @Column({ type: 'integer', nullable: true })
-  birthday?: number
+  @Column({ type: 'datetime', nullable: true })
+  birthday?: Date
 
   @Column({ type: 'text', nullable: true })
   address?: string

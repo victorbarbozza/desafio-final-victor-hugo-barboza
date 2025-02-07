@@ -3,7 +3,7 @@ export interface IClient {
   name: string
   email: string
   phone?: string
-  birthday?: number
+  birthday?: Date
   address?: string
   createdAt?: Date
   updatedAt?: Date
