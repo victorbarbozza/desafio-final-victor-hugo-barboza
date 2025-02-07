@@ -4,11 +4,13 @@
   "description": "Desafio Final do Modulo 4 de Victor Hugo Barboza - Pós Xp Educação",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx tsx ./src/server.ts"
   },
   "author": "Victor Hugo Barboza",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.21.2",
     "npm": "^11.1.0",
     "reflect-metadata": "^0.2.2",
@@ -16,6 +18,7 @@
     "typeorm": "^0.3.20"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0"
   }
 }
