@@ -2,7 +2,7 @@ import { DataSource, DataSourceOptions } from 'typeorm'
 
 const databaseConfig: DataSourceOptions = {
   type: 'sqlite',
-  database: './src/repository/dastabase.sqlite',
+  database: './repository/database.sqlite',
   entities: ['./src/models/*.ts'],
   synchronize: true, //usar somente em desenvolvimento (sinconiza as tabelas e pode perder dados)
 }
@@ -15,6 +15,5 @@ export const initializeDatabase = async () => {
     console.log('Banco de dados conectado com sucesso.')
   } catch (error) {
     console.error('Erro ao conectar no banco:', error)
-    // process.exit(1)
   }
 }
