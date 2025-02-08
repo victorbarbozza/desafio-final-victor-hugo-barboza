@@ -2,6 +2,10 @@
 
 Este projeto é uma API RESTful desenvolvida com Node.js e Express para o desafio final do modulo 4.
 
+## Requisitos
+
+NodeJs 22+
+
 ## Instalação
 
 Instale as dependências:
