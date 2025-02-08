@@ -18,5 +18,6 @@ const port = 3000
 initializeDatabase().then(() => {
   app.listen(3000, () => {
     console.log(`Servidor rodando em http://localhost:${port}`)
+    console.log(`Painel Admin rodando em http://localhost:${port}/admin`)
   })
 })
