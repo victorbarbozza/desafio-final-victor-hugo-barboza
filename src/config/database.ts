@@ -4,7 +4,7 @@ const databaseConfig: DataSourceOptions = {
   type: 'sqlite',
   database: './repository/database.sqlite',
   entities: ['./src/models/*.ts'],
-  synchronize: true, //usar somente em desenvolvimento (sinconiza as tabelas e pode perder dados)
+  synchronize: true, //usar somente em desenvolvimento (sinconiza as tabelas ao iniciar e pode perder dados)
 }
 
 export const AppDataSource = new DataSource(databaseConfig)
